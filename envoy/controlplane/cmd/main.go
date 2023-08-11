@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
@@ -55,8 +57,10 @@ func main() {
 	cb := &utils.Callbacks{Debug: llog.Debug}
 	// 官方提供的控制面server
 	srv := server.NewServer(context.Background(), snapshotCache, cb)
-	// 注册集群服务CDS
+	// 注册集群服务CDS LDS RDS
 	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, srv)
+	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
+	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
 
 	// 启动grpc服务
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 19000))

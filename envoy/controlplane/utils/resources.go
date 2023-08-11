@@ -20,9 +20,9 @@ const (
 	ClusterName  = "lain_cluster"
 	RouteName    = "local_route"
 	ListenerName = "listener_0"
-	ListenerPort = 10000
-	UpstreamHost = "172.17.0.2"
-	UpstreamPort = 80
+	ListenerPort = 8080         // 对应lds里的监听端口
+	UpstreamHost = "172.17.0.2" // 对应cds里endpoint的ip
+	UpstreamPort = 80           // 对应cds里endpoint的端口
 )
 
 // GenerateSnapshot 创建缓存快照
