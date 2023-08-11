@@ -17,6 +17,6 @@ resources:
                     domains: ["*"]
                     routes:
                       - match: {prefix: "/"}
-                        route: {cluster: lain_cluster_config}
+                        route: {cluster: lain_cluster}
               http_filters:
                 - name: envoy.filters.http.router
