@@ -1,0 +1,23 @@
+resources:
+  - name: lain_cluster_config
+    "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    connect_timeout: 1s
+    type: Static
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: lain_cluster
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 172.17.0.2
+                    port_value: 80
+              load_balancing_weight: 2
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 172.17.0.3
+                    port_value: 80
+              load_balancing_weight: 4
