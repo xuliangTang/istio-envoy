@@ -8,6 +8,7 @@ import (
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"istio-envoy/envoy/controlplane/utils"
@@ -40,7 +41,7 @@ func main() {
 	snapshotCache := cache.NewSnapshotCache(false, cache.IDHash{}, llog)
 
 	// envoy 配置的缓存快照
-	snapshot := utils.GenerateSnapshot()
+	snapshot := utils.GenerateSnapshot(utils.SnapshotVersion)
 	if err := snapshot.Consistent(); err != nil {
 		llog.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 		os.Exit(1)
@@ -62,12 +63,43 @@ func main() {
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
 
+	errCh := make(chan error)
 	// 启动grpc服务
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 19000))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = grpcServer.Serve(lis); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 19000))
+		if err != nil {
+			errCh <- err
+			return
+		}
+		if err = grpcServer.Serve(lis); err != nil {
+			errCh <- err
+			return
+		}
+	}()
+
+	// 启动http服务
+	go func() {
+		r := gin.New()
+
+		r.GET("/update", func(c *gin.Context) {
+			// 模拟提交yaml 修改envoy配置
+			utils.UpstreamHost = "172.17.0.3"
+			utils.SnapshotVersion = "v2-" + time.Now().Format("2006-01-02 15:04:05")
+			snapshot := utils.GenerateSnapshot(utils.SnapshotVersion)
+			if err := snapshotCache.SetSnapshot(c, nodeID, *snapshot); err != nil {
+				c.String(400, err.Error())
+				return
+			}
+
+			c.String(200, "success")
+		})
+
+		if err := r.Run(":18000"); err != nil {
+			errCh <- err
+		}
+	}()
+
+	err := <-errCh
+	log.Println(err)
+	os.Exit(1)
 }

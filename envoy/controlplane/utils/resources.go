@@ -16,18 +16,19 @@ import (
 	"time"
 )
 
-const (
-	ClusterName  = "lain_cluster"
-	RouteName    = "local_route"
-	ListenerName = "listener_0"
-	ListenerPort = 8080         // 对应lds里的监听端口
-	UpstreamHost = "172.17.0.2" // 对应cds里endpoint的ip
-	UpstreamPort = 80           // 对应cds里endpoint的端口
+var (
+	ClusterName     = "lain_cluster"
+	RouteName       = "local_route"
+	ListenerName    = "listener_0"
+	ListenerPort    = 8080         // 对应lds里的监听端口
+	UpstreamHost    = "172.17.0.2" // 对应cds里endpoint的ip
+	UpstreamPort    = 80           // 对应cds里endpoint的端口
+	SnapshotVersion = "v1"
 )
 
 // GenerateSnapshot 创建缓存快照
-func GenerateSnapshot() *cache.Snapshot {
-	snap, _ := cache.NewSnapshot("1",
+func GenerateSnapshot(version string) *cache.Snapshot {
+	snap, _ := cache.NewSnapshot(version,
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  {makeCluster(ClusterName)},
 			resource.RouteType:    {makeRoute(RouteName, ClusterName)},
@@ -62,7 +63,7 @@ func makeEndpoint(clusterName string) *endpoint.ClusterLoadAssignment {
 									Protocol: core.SocketAddress_TCP,
 									Address:  UpstreamHost,
 									PortSpecifier: &core.SocketAddress_PortValue{
-										PortValue: UpstreamPort,
+										PortValue: uint32(UpstreamPort),
 									},
 								},
 							},
@@ -129,7 +130,7 @@ func makeHTTPListener(listenerName string, route string) *listener.Listener {
 					Protocol: core.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &core.SocketAddress_PortValue{
-						PortValue: ListenerPort,
+						PortValue: uint32(ListenerPort),
 					},
 				},
 			},
