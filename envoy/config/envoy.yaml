@@ -19,6 +19,10 @@ static_resources:
                 codec_type: AUTO
                 route_config:
                   name: myroute
+                  response_headers_to_add:
+                    - header:
+                        key: myname
+                        value: txl
                   virtual_hosts:
                     - name: myhost
                       domains: ["*"]
