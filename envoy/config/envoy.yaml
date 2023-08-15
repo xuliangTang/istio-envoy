@@ -27,8 +27,10 @@ static_resources:
                     - name: myhost
                       domains: ["*"]
                       routes:
-                        - match: {prefix: "/"}
-                          route: {cluster: lain_cluster_config}
+                        - match: {prefix: "/v1"}
+                          route:
+                            cluster: lain_cluster_config
+                            prefix_rewrite: "/"
                 http_filters:
                   - name: addheader.lua
                     typed_config:
