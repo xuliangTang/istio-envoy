@@ -30,6 +30,13 @@ static_resources:
                         - match: {prefix: "/"}
                           route: {cluster: lain_cluster_config}
                 http_filters:
+                  - name: addheader.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_response(response_handle)
+                          response_handle:headers():add("myage", "18")
+                        end
                   - name: envoy.filters.http.router
   clusters:
     - name: lain_cluster_config
