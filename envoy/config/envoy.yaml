@@ -30,7 +30,13 @@ static_resources:
                         - match: {prefix: "/v1"}
                           route:
                             cluster: lain_cluster_config
-                            prefix_rewrite: "/"
+                            # prefix_rewrite: "/"
+                            regex_rewrite:
+                              pattern:
+                                google_re2:
+                                  max_program_size: 100
+                                regex: "^/v1/(.*?)$"
+                              substitution: "/\\1.html"
                 http_filters:
                   - name: addheader.lua
                     typed_config:
