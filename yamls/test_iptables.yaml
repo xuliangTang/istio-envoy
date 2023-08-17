@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ss
+  labels:
+    app: ss
+spec:
+  restartPolicy: Never
+  initContainers:
+    - name: init
+      image: bgiddings/iptables
+      imagePullPolicy: IfNotPresent
+      command: [ "sh","-c" ]
+      args: [ "iptables -t nat -A PREROUTING  -p tcp --dport 8080 -j REDIRECT --to-ports 80" ]
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+  containers:
+    - name: nginx
+      image: nginx:1.18-alpine
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ss
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:  #service通过selector和pod建立关联
+    app: ss
