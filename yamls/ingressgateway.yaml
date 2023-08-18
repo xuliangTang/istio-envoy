@@ -4,6 +4,9 @@ metadata:
   name: ingress
 spec:
   profile: minimal
+  meshConfig:
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY # 阻止未注册的外部访问
   components:
     ingressGateways:
       - name: ingressgateway
