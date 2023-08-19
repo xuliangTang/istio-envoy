@@ -17,11 +17,15 @@ data:
                 - name: envoy.filters.network.tcp_proxy
                   typedConfig:
                     '@type': type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
-                    cluster: BlockAllCluster
-                    statPrefix: BlockAllCluster
+                    cluster: AllowAllCluster
+                    statPrefix: AllowAllCluster
           trafficDirection: OUTBOUND
           useOriginalDst: true
       clusters:
         - name: BlockAllCluster
           connect_timeout: 1s
           type: Static
+        - name: AllowAllCluster
+          connect_timeout: 1s
+          type: ORIGINAL_DST
+          lb_policy: CLUSTER_PROVIDED
