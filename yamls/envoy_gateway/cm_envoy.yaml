@@ -35,7 +35,13 @@ data:
                                 cluster: myngx
                             - match: { prefix: "/" }
                               route:
-                                cluster: lain_cluster_config
+                                weighted_clusters:
+                                  total_weight: 100 # 总权重
+                                  clusters:
+                                    - name: lain_cluster_config
+                                      weight: 50
+                                    - name: myngx
+                                      weight: 50
                     http_filters:
                       - name: envoy.filters.http.router
           trafficDirection: OUTBOUND
