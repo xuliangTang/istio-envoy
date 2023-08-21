@@ -25,6 +25,14 @@ data:
                         - name: myhost
                           domains: [ "envoy.virtuallain.com:32180" ]
                           routes:
+                            - match:
+                                prefix: "/"
+                                headers:  # 匹配header
+                                  - name: "version"
+                                    string_match:
+                                      "exact": "v2"
+                              route:
+                                cluster: myngx
                             - match: { prefix: "/" }
                               route:
                                 cluster: lain_cluster_config
@@ -45,4 +53,17 @@ data:
                       address:
                         socket_address:
                           address: prodsvc.default.svc.cluster.local
+                          port_value: 80
+        - name: myngx
+          connect_timeout: 1s
+          type: LOGICAL_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: lain_cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: myngx-svc.default.svc.cluster.local
                           port_value: 80
