@@ -23,7 +23,7 @@ data:
                       name: myroute
                       virtual_hosts:
                         - name: myhost
-                          domains: [ "*" ]
+                          domains: [ "envoy.virtuallain.com:32180" ]
                           routes:
                             - match: { prefix: "/" }
                               route:
