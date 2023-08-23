@@ -39,5 +39,5 @@ func GenerateSnapshot(version string) *cache.Snapshot {
 			resource.ListenerType: {lis},
 		},
 	)
-	return &snap
+	return snap
 }

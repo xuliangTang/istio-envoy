@@ -1,4 +1,4 @@
-package main
+package bootstrap
 
 import (
 	"context"
@@ -9,13 +9,23 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"istio-envoy/mygateway/utils"
-	"log"
 	"net"
 	"os"
 	"time"
 )
 
-func main() {
+type GatewayBooter struct{}
+
+func NewGatewayBooter() *GatewayBooter {
+	return &GatewayBooter{}
+}
+
+func (*GatewayBooter) Start(context.Context) error {
+	return runXdsServer()
+}
+
+// 启动xds server
+func runXdsServer() error {
 	var grpcOptions []grpc.ServerOption
 	grpcOptions = append(grpcOptions,
 		grpc.MaxConcurrentStreams(1000), // 一条GRPC连接允许并发的发送和接收多个Stream
@@ -47,7 +57,7 @@ func main() {
 	// Add the snapshot to the cache
 	// nodeID 必须要设置
 	nodeID := "test1"
-	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, *snapshot); err != nil {
+	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, snapshot); err != nil {
 		os.Exit(1)
 	}
 
@@ -58,22 +68,15 @@ func main() {
 	// 注册
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
 
-	errCh := make(chan error)
-	// 启动grpc服务
-	go func() {
-		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 19000))
-		if err != nil {
-			errCh <- err
-			return
-		}
-		fmt.Println("启动xDS服务")
-		if err = grpcServer.Serve(lis); err != nil {
-			errCh <- err
-			return
-		}
-	}()
+	// 启动服务
+	fmt.Println("启动xDS服务")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 19000))
+	if err != nil {
+		return err
+	}
+	if err = grpcServer.Serve(lis); err != nil {
+		return err
+	}
 
-	err := <-errCh
-	log.Println(err)
-	os.Exit(1)
+	return nil
 }
