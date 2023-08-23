@@ -35,7 +35,7 @@ func GenerateSnapshot(version string) *cache.Snapshot {
 			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
 		},
 	)
-	return &snap
+	return snap
 }
 
 // 集群配置

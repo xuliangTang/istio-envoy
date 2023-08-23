@@ -1,7 +1,23 @@
-#input: {
-	 listen_port: int | *8080
+input: {}
+
+nginx_prefix: "nginx.ingress.kubernetes.io"
+nginx_annotations:{
+	rewrite_target: nginx_prefix + "/" + "rewrite-target"
 }
-input: #input
+
+annotations: input.metadata.annotations
+
+vars: {
+	if annotations == _|_ {
+		rewrite: false
+		rewrite_value: ""
+	}
+
+	if annotations != _|_ && annotations[nginx_annotations.rewrite_target] != _|_ {
+		rewrite: true
+		rewrite_value: annotations[nginx_annotations.rewrite_target]
+	}
+}
 
 output: {
 	listener: {
@@ -9,7 +25,7 @@ output: {
 		address: {
 			 socket_address: {
 			 	 address: "0.0.0.0",
-		     port_value: input.listen_port
+		     port_value: "8080"
 			 }
 		}
 		filter_chains: [
@@ -31,7 +47,7 @@ output: {
 												grpc_services: [
 													{
 															envoy_grpc:  {
-															cluster_name: "gateway_cluster"
+															cluster_name: "xds_cluster"
 														}
 													}
 												]
@@ -55,47 +71,76 @@ output: {
 	route: {
 		name: "gateway_route"
 		virtual_hosts: [
-				{
-					name: "myhost"
-					domains: [ "envoy.virtuallain.com:32180" ]
-					routes: [
-						{
-							 match: {
-									prefix: "/"
-							 }
-							 route: {
-								 cluster: "prod_cluster"
-							 }
-						}
-					]
+				for _, rule in input.spec.rules {
+						name: rule.host + "_name"
+						domains: [rule.host],
+						routes: [
+							for _, p in rule.bytes.http.paths {
+								{
+									 match: {
+									 		if p.pathType == "Prefix" {
+									 			if vars.rewrite == false {
+									 				prefix: p.path
+									 			}
+									 			if vars.rewrite == true {	// 判断路径重写
+									 				safe_regex:{
+														 google_re2: {}
+														 regex: p.path
+											 	 	}
+									 			}
+									 		}
+
+									 		if p.pathType == "Exact" {
+												path: p.path
+									 		}
+									 }
+									 route: {
+										 	cluster: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
+										  if vars.rewrite == true{
+												 	regex_rewrite: {
+												 		pattern: {
+												 			google_re2: {}
+                              regex: p.path
+														}
+                            substitution: vars.rewrite_value
+												 	}
+											}
+									 }
+								}
+							}
+						]
 				}
 		]
 	}
 
 	clusters: [
-      {
-      	  name: "prod_cluster"
-					connect_timeout: "1s"
-					type: "LOGICAL_DNS"
-					lb_policy: "ROUND_ROBIN"
-					load_assignment: {
-						cluster_name: "prod_cluster"
-						endpoints: [
-							{
-								lb_endpoints: [
+			for _, rule in input.spec.rules {
+				for _, p in rule.bytes.http.paths {
+					{
+							name: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
+      				connect_timeout: "1s"
+      				type: "STATIC"
+      				lb_policy: "ROUND_ROBIN"
+      				load_assignment: {
+								cluster_name: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
+								endpoints: [
 									{
-										endpoint: {
-											address: {
-													socket_address: {
-													  	address: "prodsvc.default.svc.cluster.local"
-															port_value: 80
+										lb_endpoints: [
+											{
+												endpoint: {
+													address: {
+															socket_address: {
+																	address: "172.17.0.2"
+																	port_value: 80
+															}
 													}
-											}
-									  }
+												}
+											}]
 									}]
-							}]
+					    }
 					}
-      }
+				}
+			}
   ]
 
 }

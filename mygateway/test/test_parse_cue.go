@@ -22,7 +22,7 @@ const input = `
 
 func main() {
 	cc := cuecontext.New()
-	cv := cc.CompileBytes(helpers.MustLoadFile("mygateway/tpls/xds.cue"))
+	cv := cc.CompileBytes(helpers.MustLoadFile("mygateway/tpls/xds_test.cue"))
 	inputCv := cc.CompileString(input)
 	cv.FillPath(cue.ParsePath("input"), inputCv)
 	b, err := cv.LookupPath(cue.ParsePath("output")).MarshalJSON()

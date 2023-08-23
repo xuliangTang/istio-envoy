@@ -9,7 +9,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/tidwall/gjson"
-	"istio-envoy/mygateway/utils/helpers"
 	"log"
 )
 
@@ -21,13 +20,13 @@ type TplGenerator[T TplObj] struct {
 	cuecv cue.Value
 }
 
-//go:embed xds.cue
+//go:embed xds_test.cue
 var xdstpl []byte
 
 // NewTplGenerator 生成xds模板的cue对象
 func NewTplGenerator[T TplObj]() *TplGenerator[T] {
 	cc := cuecontext.New()
-	cv := cc.CompileBytes(helpers.MustLoadFile("mygateway/tpls/xds.cue"))
+	cv := cc.CompileBytes(xdstpl)
 	if cv.Err() != nil {
 		log.Fatalln(cv.Err())
 	}

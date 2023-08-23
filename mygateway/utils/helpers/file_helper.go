@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"io"
+	"log"
 	"os"
 )
 
@@ -39,4 +40,16 @@ func FileExists(file string) bool {
 	}
 
 	return true
+}
+
+func SaveStr(str, file string) {
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer f.Close()
+	_, err = f.WriteString(str)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
