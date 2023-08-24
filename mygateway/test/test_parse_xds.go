@@ -12,7 +12,7 @@ import (
 func main() {
 	// 解析ingress
 	ing := &v1.Ingress{}
-	if err := yaml.Unmarshal([]byte(test_ingress), ing); err != nil {
+	if err := yaml.Unmarshal(helpers.MustLoadFile("mygateway/test/ingress.yaml"), ing); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -39,6 +39,14 @@ metadata:
   annotations:
     envoy.ingress.kubernetes.io/rewrite-target: "/\\1"
     envoy.ingress.kubernetes.io/ratelimit-max: 5
+    envoy.ingress.kubernetes.io/cors-enable: true
+    envoy.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, DELETE, POST, OPTIONS"
+    envoy.ingress.kubernetes.io/cors-allow-origin: "*"
+    envoy.ingress.kubernetes.io/cors-allow-origin-prefix: "abc"
+    envoy.ingress.kubernetes.io/cors-allow-headers: "Authorization,test,ddd"
+    envoy.ingress.kubernetes.io/cors-expose-headers: "sss"
+    envoy.ingress.kubernetes.io/cors-max-age: 18000
+    envoy.ingress.kubernetes.io/cors-allow-credentials: true
 spec:
   rules:
     - host: myservicea.foo.org

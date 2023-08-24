@@ -46,6 +46,11 @@ output: {
 									}
 								}
 								http_filters: [
+									if comm.vars.cors != _|_ {
+										{
+											name: "envoy.filters.http.cors"
+										}
+									},
 									if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 										{
 											name: "envoy.filters.http.local_ratelimit"
@@ -74,15 +79,18 @@ output: {
 				for _, rule in input.spec.rules {
 						name: rule.host + "_name"
 						domains: [rule.host],
+						if comm.vars.cors != _|_ {  // 跨域设置
+								cors: comm.vars.cors
+						},
 						routes: [
 							for _, p in rule.bytes.http.paths {
 								{
 									 match: {
 									 		if p.pathType == "Prefix" {
-									 			if comm.vars.rewrite_value == _|_{
+									 			if comm.vars.rewrite_value == _|_ {
 									 				prefix: p.path
 									 			}
-									 			if comm.vars.rewrite_value != _|_{	// 判断路径重写
+									 			if comm.vars.rewrite_value != _|_ {	// 判断路径重写
 									 				safe_regex:{
 														 google_re2: {}
 														 regex: p.path

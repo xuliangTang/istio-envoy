@@ -35,6 +35,10 @@ static_resources:
                   virtual_hosts:
                     - name: myhost
                       domains: ["*"]
+                      cors:
+                        allow_origin_string_match:
+                          - exact: "*"
+                        allow_methods: "GET, PUT, DELETE, POST, OPTIONS"
                       routes:
                         - match: {prefix: "/v1"}
                           route:
@@ -70,6 +74,7 @@ static_resources:
                                 key: x-local-rate-limit
                                 value: 'true'
                 http_filters:
+                  - name: envoy.filters.http.cors
                   - name: envoy.filters.http.local_ratelimit
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit

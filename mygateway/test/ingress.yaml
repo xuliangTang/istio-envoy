@@ -5,6 +5,9 @@ metadata:
   annotations:
     #envoy.ingress.kubernetes.io/rewrite-target: "/\\1"
     envoy.ingress.kubernetes.io/ratelimit-max: 5
+    envoy.ingress.kubernetes.io/cors-enable: "true"
+    envoy.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, DELETE, POST, OPTIONS"
+    envoy.ingress.kubernetes.io/cors-allow-origin: "*"
 spec:
   rules:
     - host: envoy.virtuallain.com
