@@ -16,7 +16,7 @@ const input_tpl_generator = `
 func main() {
 	lis := &listener.Listener{}
 	err := tpls.NewTplGenerator[*listener.Listener]().
-		GetOutput(input_tpl_generator, "listener", false, lis)
+		GetOutput(input_tpl_generator, "listener", lis)
 	if err != nil {
 		log.Fatalln(err)
 	}

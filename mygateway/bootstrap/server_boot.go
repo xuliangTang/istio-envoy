@@ -3,14 +3,19 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"istio-envoy/mygateway/utils"
+	"log"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -21,8 +26,15 @@ func NewGatewayBooter() *GatewayBooter {
 }
 
 func (*GatewayBooter) Start(context.Context) error {
+	runDebugHttpServer()
 	return runXdsServer()
 }
+
+var (
+	currentVersion = 1
+	snapshotCache  cache.SnapshotCache
+	nodeID         = "test1" // 测试用的节点ID
+)
 
 // 启动xds server
 func runXdsServer() error {
@@ -45,18 +57,16 @@ func runXdsServer() error {
 	// 日志
 	llog := utils.MyLogger{}
 	// 创建缓存系统
-	snapshotCache := cache.NewSnapshotCache(false, cache.IDHash{}, llog)
+	snapshotCache = cache.NewSnapshotCache(false, cache.IDHash{}, llog)
 
 	// envoy配置的缓存快照
-	snapshot := utils.GenerateSnapshot("1")
+	snapshot := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
 	if err := snapshot.Consistent(); err != nil {
 		llog.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 		os.Exit(1)
 	}
 
 	// Add the snapshot to the cache
-	// nodeID 必须要设置
-	nodeID := "test1"
 	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, snapshot); err != nil {
 		os.Exit(1)
 	}
@@ -67,6 +77,8 @@ func runXdsServer() error {
 	srv := server.NewServer(context.Background(), snapshotCache, cb)
 	// 注册
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
+	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
+	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, srv)
 
 	// 启动服务
 	fmt.Println("启动xDS服务")
@@ -79,4 +91,25 @@ func runXdsServer() error {
 	}
 
 	return nil
+}
+
+// 启动http服务，用于重载配置
+func runDebugHttpServer() {
+	go func() {
+		r := gin.New()
+		r.GET("/reload", func(c *gin.Context) {
+			currentVersion++
+			ss := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
+			err := snapshotCache.SetSnapshot(c, nodeID, ss)
+			if err != nil {
+				c.String(400, err.Error())
+			} else {
+				c.String(200, "success")
+			}
+		})
+		fmt.Println("启动Debug Server，端口是18000")
+		if err := r.Run(":18000"); err != nil {
+			log.Println("debug server 启动失败")
+		}
+	}()
 }
