@@ -1,44 +1,13 @@
 package tpls
 import (
-	"strconv"
+	"lain.com/mygateway/mygateway/tpls/common"
 )
 
 input: {}
-annotations: input.metadata.annotations
 
-ingress_prefix: "envoy.ingress.kubernetes.io"
-ingress_annotations:{
-	rewrite_target: ingress_prefix + "/" + "rewrite-target"
-
-	// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/local_ratelimit/v3/local_rate_limit.proto#extensions-filters-http-local-ratelimit-v3-localratelimit
-	ratelimit_max: ingress_prefix + "/" + "ratelimit-max"
-	ratelimit_perfill: ingress_prefix + "/" + "ratelimit-perfill"
-	ratelimit_fillinteval: ingress_prefix + "/" + "ratelimit-fillinteval"
-}
-
-#ratelimit: {
-	max: int | *0  // 桶的数量，如果是 0 则不限流
-	perfill: int | *1		// 填充数量
-  fillinteval: string | *"1s"	// 填充间隔
-}
-ratelimit: #ratelimit & {
-	if annotations != _|_ {
-		 if annotations[ingress_annotations.ratelimit_max] != _|_ {
-		 		max: strconv.Atoi(annotations[ingress_annotations.ratelimit_max])	// 因为fill时会被看作字符串，所以要转换为int
-		 }
-		 if annotations[ingress_annotations.ratelimit_perfill] != _|_{
-		 		perfill: annotations[ingress_annotations.ratelimit_perfill]
-		 }
-		 if annotations[ingress_annotations.ratelimit_fillinteval] != _|_{
-		 		fillinteval: annotations[ingress_annotations.ratelimit_fillinteval]
-		 }
-	}
-}
-
-vars: {
-	if annotations != _|_ && annotations[ingress_annotations.rewrite_target] != _|_ {
-		rewrite_value: annotations[ingress_annotations.rewrite_target]
-	}
+// 覆盖common里的值
+comm: common & {
+	annotations: input.metadata.annotations
 }
 
 output: {
@@ -77,7 +46,7 @@ output: {
 									}
 								}
 								http_filters: [
-									if ratelimit.max != _|_ && ratelimit.max > 0 {	// 判断rps限流
+									if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 										{
 											name: "envoy.filters.http.local_ratelimit"
 											typed_config: {
@@ -110,10 +79,10 @@ output: {
 								{
 									 match: {
 									 		if p.pathType == "Prefix" {
-									 			if vars.rewrite_value == _|_{
+									 			if comm.vars.rewrite_value == _|_{
 									 				prefix: p.path
 									 			}
-									 			if vars.rewrite_value != _|_{	// 判断路径重写
+									 			if comm.vars.rewrite_value != _|_{	// 判断路径重写
 									 				safe_regex:{
 														 google_re2: {}
 														 regex: p.path
@@ -127,25 +96,25 @@ output: {
 									 }
 									 route: {
 										 	cluster: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
-										  if vars.rewrite_value != _|_ {
+										  if comm.vars.rewrite_value != _|_ {
 												 	regex_rewrite: {
 												 		pattern: {
 												 			google_re2: {}
                               regex: p.path
 														}
-                            substitution: vars.rewrite_value
+                            substitution: comm.vars.rewrite_value
 												 	}
 											}
 									 }
-									 if ratelimit.max != _|_ && ratelimit.max > 0 {	// 判断rps限流
+									 if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 									 		typed_per_filter_config: {
 											 		"envoy.filters.http.local_ratelimit": {
 											 			 "@type": "type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit"
                               stat_prefix: rule.host + "_local_rate_limiter"
                               token_bucket: {
-                                max_tokens: ratelimit.max
-                                tokens_per_fill: ratelimit.perfill
-                                fill_interval: ratelimit.fillinteval
+                                max_tokens: comm.ratelimit.max
+                                tokens_per_fill: comm.ratelimit.perfill
+                                fill_interval: comm.ratelimit.fillinteval
                               }
                               filter_enabled: {
                               	runtime_key: rule.host + "_rate_limit_enabled"

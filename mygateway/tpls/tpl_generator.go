@@ -2,13 +2,17 @@ package tpls
 
 import (
 	"cuelang.org/go/cue"
-	"cuelang.org/go/cue/cuecontext"
 	_ "embed"
 	"fmt"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/tidwall/gjson"
+	"istio-envoy/mygateway/utils/helpers"
 	"log"
+)
+
+const (
+	xdsCueTpl = "mygateway/tpls/xds.cue"
 )
 
 type TplObj interface {
@@ -19,13 +23,15 @@ type TplGenerator[T TplObj] struct {
 	cuecv cue.Value
 }
 
-//go:embed xds.cue
-var xdstpl []byte
+// go:embed xds.cue
+// var xdstpl []byte
 
 // NewTplGenerator 生成xds模板的cue对象
 func NewTplGenerator[T TplObj]() *TplGenerator[T] {
-	cc := cuecontext.New()
-	cv := cc.CompileBytes(xdstpl)
+	// cc := cuecontext.New()
+	// cv := cc.CompileBytes(xdstpl)
+	// 如果cue使用了import，不能直接读取文件，需要使用下面这种方式获取
+	cv := helpers.MustLoadFileInstance(xdsCueTpl)
 	if cv.Err() != nil {
 		log.Fatalln(cv.Err())
 	}
