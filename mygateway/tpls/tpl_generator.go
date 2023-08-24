@@ -5,7 +5,6 @@ import (
 	"cuelang.org/go/cue/cuecontext"
 	_ "embed"
 	"fmt"
-	_ "github.com/envoyproxy/go-control-plane/pkg/cache/v3" // 要加这个引入，否则下面jsonpb.unmarshal会报错
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/tidwall/gjson"

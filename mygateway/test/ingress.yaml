@@ -3,13 +3,14 @@ kind: Ingress
 metadata:
   name: envoytest
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: "/\\1"
+    #envoy.ingress.kubernetes.io/rewrite-target: "/\\1"
+    envoy.ingress.kubernetes.io/ratelimit-max: 5
 spec:
   rules:
     - host: envoy.virtuallain.com
       http:
         paths:
-          - path: /v1/(.*?)
+          - path: /
             pathType: Prefix
             backend:
               service:
