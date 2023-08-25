@@ -95,9 +95,13 @@ func runXdsServer() error {
 	return nil
 }
 
+// OnAdd 新增envoy配置
 func OnAdd(ing *v1.Ingress) {
 	currentVersion++
-	utils.AddSnapshot(strconv.Itoa(currentVersion), ing)
+	newSnapshot := utils.AddSnapshot(strconv.Itoa(currentVersion), ing)
+	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, newSnapshot); err != nil {
+		log.Println("onAdd error:", err)
+	}
 }
 
 // 启动http服务，用于重载配置

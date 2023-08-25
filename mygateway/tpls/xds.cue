@@ -153,7 +153,7 @@ output: {
 					{
 							name: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
       				connect_timeout: "1s"
-      				type: "STATIC"
+      				type: "LOGICAL_DNS"
       				lb_policy: "ROUND_ROBIN"
       				load_assignment: {
 								cluster_name: "OUTBOUND|" + p.backend.service.name + "|" + "\(p.backend.service.port.number)"
@@ -164,8 +164,8 @@ output: {
 												endpoint: {
 													address: {
 															socket_address: {
-																	address: "172.17.0.2"
-																	port_value: 80
+																	address: p.backend.service.name
+																	port_value: p.backend.service.port.number
 															}
 													}
 												}
