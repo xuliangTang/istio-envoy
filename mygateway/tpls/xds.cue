@@ -1,6 +1,7 @@
 package tpls
 import (
 	"lain.com/mygateway/mygateway/tpls/common"
+	"lain.com/mygateway/mygateway/tpls/filters/http/ratelimit"
 )
 
 input: {}
@@ -52,13 +53,7 @@ output: {
 										}
 									},
 									if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
-										{
-											name: "envoy.filters.http.local_ratelimit"
-											typed_config: {
-												"@type": "type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit"
-                         stat_prefix: "http_local_rate_limiter"
-											}
-										}
+										ratelimit.local_ratelimit
 									},
 									{
 										name: "envoy.filters.http.router"
@@ -116,38 +111,15 @@ output: {
 									 }
 									 if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 									 		typed_per_filter_config: {
-											 		"envoy.filters.http.local_ratelimit": {
-											 			 "@type": "type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit"
-                              stat_prefix: rule.host + "_local_rate_limiter"
-                              token_bucket: {
-                                max_tokens: comm.ratelimit.max
-                                tokens_per_fill: comm.ratelimit.perfill
-                                fill_interval: comm.ratelimit.fillinteval
-                              }
-                              filter_enabled: {
-                              	runtime_key: rule.host + "_rate_limit_enabled"
-                                default_value: {
-                                	 numerator: 100
-                                   denominator: "HUNDRED"
-                                }
-                              }
-                              filter_enforced: {
-                              	runtime_key: rule.host + "_rate_limit_enforced"
-                                default_value: {
-                                	 numerator: 100
-                                   denominator: "HUNDRED"
-                                }
-                              }
-                              response_headers_to_add: [
-                              	{
-                              		append: false
-																	header: {
-																		key: "x-local-rate-limit"
-																	  value: "true"
-																	}
-                              	}
-                              ]
+											 		_f: ratelimit & {
+											 			local_ratelimit_prefilter_config: {
+											 		 		max_tokens:  comm.ratelimit.max
+											 		 		tokens_per_fill: comm.ratelimit.perfill
+											 		 		fill_interval:  comm.ratelimit.fillinteval
+											 		 		prefix: rule.host
+											 		 	}
 											 		}
+											 		_f.local_ratelimit_prefilter
 											}
 									 }
 
