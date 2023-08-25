@@ -3,28 +3,24 @@ kind: Ingress
 metadata:
   name: envoytest
   annotations:
-    #envoy.ingress.kubernetes.io/rewrite-target: "/\\1"
-    envoy.ingress.kubernetes.io/ratelimit-max: 5
+    envoy.ingress.kubernetes.io/ratelimit-max: "5"
     envoy.ingress.kubernetes.io/cors-enable: "true"
     envoy.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, DELETE, POST, OPTIONS"
     envoy.ingress.kubernetes.io/cors-allow-origin: "*"
-#    envoy.ingress.kubernetes.io/lua-block: |
-#      function envoy_on_response(response_handle)
-#         response_handle:headers():add("api-version", "1.0")
-#      end
-    envoy.ingress.kubernetes.io/lua-response:
+    envoy.ingress.kubernetes.io/lua-response: |
       response:headers():add("version", "v1beta1")
-    envoy.ingress.kubernetes.io/lua-request:
+    envoy.ingress.kubernetes.io/lua-request: |
       request:headers():add("myname", "txl")
 spec:
+  ingressClassName: myenvoy
   rules:
-    - host: envoy.virtuallain.com
+    - host: envoy.virtuallain.com:32180
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: myservicea
+                name: myngx-svc
                 port:
                   number: 80
