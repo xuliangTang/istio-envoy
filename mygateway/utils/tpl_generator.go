@@ -1,4 +1,4 @@
-package tpls
+package utils
 
 import (
 	"cuelang.org/go/cue"
@@ -26,17 +26,29 @@ type TplGenerator[T TplObj] struct {
 // go:embed xds.cue
 // var xdstpl []byte
 
+var xdsCV *cue.Value
+
 // NewTplGenerator 生成xds模板的cue对象
 func NewTplGenerator[T TplObj]() *TplGenerator[T] {
-	// cc := cuecontext.New()
-	// cv := cc.CompileBytes(xdstpl)
-	// 如果cue使用了import，不能直接读取文件，需要使用下面这种方式获取
-	cv := helpers.MustLoadFileInstance(xdsCueTpl)
-	if cv.Err() != nil {
-		log.Fatalln(cv.Err())
+	if xdsCV == nil {
+		// cc := cuecontext.New()
+		// cv := cc.CompileBytes(xdstpl)
+		// 如果cue使用了import，不能直接读取文件，需要使用下面这种方式获取
+		cv := helpers.MustLoadFileInstance(xdsCueTpl)
+		if cv.Err() != nil {
+			log.Fatalln(cv.Err())
+		}
+
+		// 填充控制面系统配置
+		cv = cv.FillPath(cue.ParsePath("sysconfig"), SysConfig)
+		if cv.Err() != nil {
+			log.Fatalln(cv.Err())
+		}
+
+		xdsCV = &cv
 	}
 	return &TplGenerator[T]{
-		cuecv: cv,
+		cuecv: *xdsCV,
 	}
 }
 

@@ -14,7 +14,7 @@ metadata:
 spec:
   ingressClassName: myenvoy
   rules:
-    - host: envoy.virtuallain.com:32180
+    - host: envoy.virtuallain.com
       http:
         paths:
           - path: /

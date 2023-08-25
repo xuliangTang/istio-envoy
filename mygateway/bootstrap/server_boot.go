@@ -27,6 +27,7 @@ func NewGatewayBooter() *GatewayBooter {
 }
 
 func (*GatewayBooter) Start(context.Context) error {
+	utils.InitSysConfig()
 	runDebugHttpServer()
 	return runXdsServer()
 }
@@ -61,8 +62,8 @@ func runXdsServer() error {
 	snapshotCache = cache.NewSnapshotCache(false, cache.IDHash{}, llog)
 
 	// envoy配置的缓存快照
-	// snapshot := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
-	snapshot := utils.NewSnapshot(strconv.Itoa(currentVersion))
+	//snapshot := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
+	snapshot := utils.NewEmptySnapshot(strconv.Itoa(currentVersion))
 	if err := snapshot.Consistent(); err != nil {
 		llog.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 		os.Exit(1)

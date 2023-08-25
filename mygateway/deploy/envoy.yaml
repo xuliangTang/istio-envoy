@@ -32,6 +32,15 @@ subjects:
     name: sa-ingress-envoy
     namespace: ingress-envoy
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-controller
+  namespace: ingress-envoy
+data:
+  sysconfig.yaml: |
+    nodeport: 32180
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -57,6 +66,15 @@ spec:
               value: "1"
           ports:
             - containerPort: 19000
+          volumeMounts:
+            - name: controllerconfig
+              mountPath: /app/sysconfig.yaml
+              subPath: sysconfig.yaml
+      volumes:
+        - name: controllerconfig
+          configMap:
+            defaultMode: 0655
+            name: envoy-controller
 ---
 apiVersion: v1
 kind: Service

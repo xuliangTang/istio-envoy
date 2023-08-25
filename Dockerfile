@@ -19,8 +19,6 @@ COPY --from=builder /usr/local/go/lib/time/zoneinfo.zip /app
 
 COPY --from=builder /src/envoy-controller /app
 COPY --from=builder /src/cue.mod /app/cue.mod
-COPY --from=builder /src/mygateway/tpls/xds.cue /app/mygateway/tpls/xds.cue
-COPY --from=builder /src/mygateway/tpls/common /app/mygateway/tpls/common
-COPY --from=builder /src/mygateway/tpls/filters /app/mygateway/tpls/filters
+COPY --from=builder /src/mygateway/tpls /app/mygateway/tpls
 
 ENTRYPOINT  ["./envoy-controller"]

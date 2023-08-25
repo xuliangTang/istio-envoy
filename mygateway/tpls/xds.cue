@@ -5,6 +5,10 @@ import (
 	"lain.com/mygateway/mygateway/tpls/filters/http/lua"
 )
 
+sysconfig: {
+	nodeport: int | *80	// 控制面配置文件的nodeport端口
+}
+
 input: {}
 
 // 覆盖common里的值
@@ -90,7 +94,7 @@ output: {
 		virtual_hosts: [
 				for _, rule in input.spec.rules {
 						name: rule.host + "_name"
-						domains: [rule.host],
+						domains: [rule.host + ":" + "\(sysconfig.nodeport)"],
 						if comm.vars.cors != _|_ {  // 跨域设置
 								cors: comm.vars.cors
 						},

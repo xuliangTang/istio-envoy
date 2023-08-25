@@ -7,7 +7,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"istio-envoy/mygateway/tpls"
 	"istio-envoy/mygateway/utils/helpers"
 	v1 "k8s.io/api/networking/v1"
 	"log"
@@ -22,7 +21,7 @@ var (
 	clusters, routeConfigs, listeners []types.Resource
 )
 
-func NewSnapshot(version string) *cache.Snapshot {
+func NewEmptySnapshot(version string) *cache.Snapshot {
 	snap, _ := cache.NewSnapshot(version,
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  {},
@@ -36,7 +35,7 @@ func NewSnapshot(version string) *cache.Snapshot {
 func AddSnapshot(version string, ingress *v1.Ingress) *cache.Snapshot {
 	// 渲染listener
 	lis := &listener.Listener{}
-	err := tpls.NewTplGenerator[*listener.Listener]().
+	err := NewTplGenerator[*listener.Listener]().
 		GetOutput(ingress, "listener", lis)
 	if err != nil {
 		log.Fatalln(err)
@@ -45,7 +44,7 @@ func AddSnapshot(version string, ingress *v1.Ingress) *cache.Snapshot {
 
 	// 渲染routeConfig
 	rc := &route.RouteConfiguration{}
-	err = tpls.NewTplGenerator[*route.RouteConfiguration]().
+	err = NewTplGenerator[*route.RouteConfiguration]().
 		GetOutput(ingress, "route", rc)
 	if err != nil {
 		log.Fatalln(err)
@@ -53,7 +52,7 @@ func AddSnapshot(version string, ingress *v1.Ingress) *cache.Snapshot {
 	routeConfigs = append(routeConfigs, rc)
 
 	// 渲染clusters
-	cls, err := tpls.NewTplGenerator[*cluster.Cluster]().
+	cls, err := NewTplGenerator[*cluster.Cluster]().
 		GetOutputs(ingress, "clusters", func() *cluster.Cluster {
 			return &cluster.Cluster{}
 		})
@@ -85,7 +84,7 @@ func GenerateSnapshot(version string) *cache.Snapshot {
 
 	// 渲染listener
 	lis := &listener.Listener{}
-	err := tpls.NewTplGenerator[*listener.Listener]().
+	err := NewTplGenerator[*listener.Listener]().
 		GetOutput(ingress, "listener", lis)
 	if err != nil {
 		log.Fatalln(err)
@@ -93,7 +92,7 @@ func GenerateSnapshot(version string) *cache.Snapshot {
 
 	// 渲染routeConfig
 	routeConfig := &route.RouteConfiguration{}
-	err = tpls.NewTplGenerator[*route.RouteConfiguration]().
+	err = NewTplGenerator[*route.RouteConfiguration]().
 		GetOutput(ingress, "route", routeConfig)
 	if err != nil {
 		log.Fatalln(err)
@@ -101,7 +100,7 @@ func GenerateSnapshot(version string) *cache.Snapshot {
 
 	// 渲染clusters
 	var resList []types.Resource
-	clusters, err := tpls.NewTplGenerator[*cluster.Cluster]().
+	clusters, err := NewTplGenerator[*cluster.Cluster]().
 		GetOutputs(ingress, "clusters", func() *cluster.Cluster {
 			return &cluster.Cluster{}
 		})

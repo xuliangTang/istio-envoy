@@ -9,7 +9,7 @@ import (
 func MustLoadFile(path string) []byte {
 	b, err := LoadFile(path)
 	if err != nil {
-		panic(err)
+		log.Fatalln("文件不存在:", path)
 	}
 
 	return b

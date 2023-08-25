@@ -1,4 +1,4 @@
-package tpls
+package utils
 
 import (
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
