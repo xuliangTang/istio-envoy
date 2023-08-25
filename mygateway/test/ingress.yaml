@@ -8,6 +8,10 @@ metadata:
     envoy.ingress.kubernetes.io/cors-enable: "true"
     envoy.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, DELETE, POST, OPTIONS"
     envoy.ingress.kubernetes.io/cors-allow-origin: "*"
+    envoy.ingress.kubernetes.io/lua-block: |
+      function envoy_on_response(response_handle)
+         response_handle:headers():add("api-version", "1.0")
+      end
 spec:
   rules:
     - host: envoy.virtuallain.com

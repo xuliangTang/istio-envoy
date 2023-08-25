@@ -55,6 +55,13 @@ output: {
 									if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 										ratelimit.local_ratelimit
 									},
+									if comm.vars.lua_block != _|_ {
+										name: "envoy.filters.http.lua"
+										typed_config: {
+											"@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
+											inline_code: comm.vars.lua_block
+										}
+									},
 									{
 										name: "envoy.filters.http.router"
 									}

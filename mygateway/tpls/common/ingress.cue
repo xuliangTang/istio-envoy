@@ -28,6 +28,9 @@ ingress_annotations:{
 	cors_expose_headers: ingress_prefix + "/"+"cors-expose-headers"
 	cors_max_age: ingress_prefix + "/" + "cors-max-age"
 	cors_allow_credentials: ingress_prefix + "/" + "cors-allow-credentials"
+
+	// lua https://www.envoyproxy.io/docs/envoy/v1.17.4/configuration/http/http_filters/lua_filter#config-http-filters-lua
+	lua_block: ingress_prefix + "/" + "lua-block"
 }
 
 #ratelimit: {
@@ -54,48 +57,54 @@ vars: {
 		rewrite_value: annotations[ingress_annotations.rewrite_target]
 	}
 
-	if annotations != _|_ && annotations[ingress_annotations.cors_enable] == "true" {
-		cors: {
-		 	allow_origin_string_match: [
-		 		{
-					if annotations[ingress_annotations.cors_allow_origin] != _|_ {
-						 exact: annotations[ingress_annotations.cors_allow_origin]
+	if annotations != _|_ && annotations[ingress_annotations.cors_enable] != _|_ {
+		if annotations[ingress_annotations.cors_enable] == "true" {
+				cors: {
+					allow_origin_string_match: [
+						{
+							if annotations[ingress_annotations.cors_allow_origin] != _|_ {
+								 exact: annotations[ingress_annotations.cors_allow_origin]
+							}
+							if annotations[ingress_annotations.cors_allow_origin_prefix] != _|_ {
+								 prefix: annotations[ingress_annotations.cors_allow_origin_prefix]
+							}
+							if annotations[ingress_annotations.cors_allow_origin_suffix] != _|_ {
+								 suffix: annotations[ingress_annotations.cors_allow_origin_suffix]
+							}
+							if annotations[ingress_annotations.cors_allow_origin_regex] != _|_ {
+								 safe_regex: {
+										google_re2: {}
+										regex: annotations[ingress_annotations.cors_allow_origin_regex]
+								 }
+							}
+							if annotations[ingress_annotations.cors_allow_origin_contains] != _|_ {
+								 contains: annotations[ingress_annotations.cors_allow_origin_contains]
+							}
+							if annotations[ingress_annotations.cors_allow_origin_ignore_case] != _|_ {
+								 ignore_case: annotations[ingress_annotations.cors_allow_origin_ignore_case]
+							}
+						}
+					]
+					if annotations[ingress_annotations.cors_allow_methods] != _|_ {
+						 allow_methods: annotations[ingress_annotations.cors_allow_methods]
 					}
-					if annotations[ingress_annotations.cors_allow_origin_prefix] != _|_ {
-						 prefix: annotations[ingress_annotations.cors_allow_origin_prefix]
+					if annotations[ingress_annotations.cors_allow_headers] != _|_ {
+						 allow_headers: annotations[ingress_annotations.cors_allow_headers]
 					}
-					if annotations[ingress_annotations.cors_allow_origin_suffix] != _|_ {
-						 suffix: annotations[ingress_annotations.cors_allow_origin_suffix]
+					if annotations[ingress_annotations.cors_max_age] != _|_ {
+						 max_age: annotations[ingress_annotations.cors_max_age]
 					}
-					if annotations[ingress_annotations.cors_allow_origin_regex] != _|_ {
-						 safe_regex: {
-						 		google_re2: {}
-						 		regex: annotations[ingress_annotations.cors_allow_origin_regex]
-						 }
+					if annotations[ingress_annotations.cors_expose_headers] != _|_ {
+						 expose_headers: annotations[ingress_annotations.cors_expose_headers]
 					}
-					if annotations[ingress_annotations.cors_allow_origin_contains] != _|_ {
-						 contains: annotations[ingress_annotations.cors_allow_origin_contains]
+					if annotations[ingress_annotations.cors_allow_credentials] != _|_ {
+						 allow_credentials: annotations[ingress_annotations.cors_allow_credentials]
 					}
-					if annotations[ingress_annotations.cors_allow_origin_ignore_case] != _|_ {
-						 ignore_case: annotations[ingress_annotations.cors_allow_origin_ignore_case]
-					}
-			  }
-		  ]
-		 	if annotations[ingress_annotations.cors_allow_methods] != _|_ {
-				 allow_methods: annotations[ingress_annotations.cors_allow_methods]
-			}
-			if annotations[ingress_annotations.cors_allow_headers] != _|_ {
-				 allow_headers: annotations[ingress_annotations.cors_allow_headers]
-			}
-     	if annotations[ingress_annotations.cors_max_age] != _|_ {
-				 max_age: annotations[ingress_annotations.cors_max_age]
-			}
-	  	if annotations[ingress_annotations.cors_expose_headers] != _|_ {
-				 expose_headers: annotations[ingress_annotations.cors_expose_headers]
-			}
-	   	if annotations[ingress_annotations.cors_allow_credentials] != _|_ {
-				 allow_credentials: annotations[ingress_annotations.cors_allow_credentials]
-			}
+				}
 		}
+	}
+
+	if annotations != _|_ && annotations[ingress_annotations.lua_block] != _|_ {
+		lua_block: annotations[ingress_annotations.lua_block]
 	}
 }
