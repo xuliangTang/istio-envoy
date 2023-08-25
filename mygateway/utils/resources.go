@@ -18,7 +18,63 @@ const (
 	TestIngress = "mygateway/test/ingress.yaml"
 )
 
-// GenerateSnapshot 解析cue生成快照
+var (
+	clusters, routeConfigs, listeners []types.Resource
+)
+
+func NewSnapshot(version string) *cache.Snapshot {
+	snap, _ := cache.NewSnapshot(version,
+		map[resource.Type][]types.Resource{
+			resource.ClusterType:  {},
+			resource.RouteType:    {},
+			resource.ListenerType: {},
+		},
+	)
+	return snap
+}
+
+func AddSnapshot(version string, ingress *v1.Ingress) *cache.Snapshot {
+	// 渲染listener
+	lis := &listener.Listener{}
+	err := tpls.NewTplGenerator[*listener.Listener]().
+		GetOutput(ingress, "listener", lis)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	listeners = append(listeners, lis)
+
+	// 渲染routeConfig
+	rc := &route.RouteConfiguration{}
+	err = tpls.NewTplGenerator[*route.RouteConfiguration]().
+		GetOutput(ingress, "route", rc)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	routeConfigs = append(routeConfigs, rc)
+
+	// 渲染clusters
+	cls, err := tpls.NewTplGenerator[*cluster.Cluster]().
+		GetOutputs(ingress, "clusters", func() *cluster.Cluster {
+			return &cluster.Cluster{}
+		})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	for _, c := range cls {
+		clusters = append(clusters, c)
+	}
+
+	snap, _ := cache.NewSnapshot(version,
+		map[resource.Type][]types.Resource{
+			resource.ClusterType:  clusters,
+			resource.RouteType:    routeConfigs,
+			resource.ListenerType: listeners,
+		},
+	)
+	return snap
+}
+
+// GenerateSnapshot 解析测试yaml生成快照
 func GenerateSnapshot(version string) *cache.Snapshot {
 	// 把ingress yaml反序列化为对象
 	ingBytes := helpers.MustLoadFile(TestIngress)

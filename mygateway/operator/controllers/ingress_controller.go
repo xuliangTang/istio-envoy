@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"istio-envoy/mygateway/bootstrap"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +32,7 @@ func (r *IngressController) Reconcile(ctx context.Context, req reconcile.Request
 
 	if ing.Spec.IngressClassName != nil && *ing.Spec.IngressClassName == IngressClassName {
 		fmt.Println("接收到ingress资源:", ing.Name)
+		bootstrap.OnAdd(ing)
 	}
 
 	return reconcile.Result{}, nil

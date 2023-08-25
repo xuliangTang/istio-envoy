@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"istio-envoy/mygateway/utils"
+	v1 "k8s.io/api/networking/v1"
 	"log"
 	"net"
 	"os"
@@ -60,7 +61,8 @@ func runXdsServer() error {
 	snapshotCache = cache.NewSnapshotCache(false, cache.IDHash{}, llog)
 
 	// envoy配置的缓存快照
-	snapshot := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
+	// snapshot := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
+	snapshot := utils.NewSnapshot(strconv.Itoa(currentVersion))
 	if err := snapshot.Consistent(); err != nil {
 		llog.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
 		os.Exit(1)
@@ -91,6 +93,11 @@ func runXdsServer() error {
 	}
 
 	return nil
+}
+
+func OnAdd(ing *v1.Ingress) {
+	currentVersion++
+	utils.AddSnapshot(strconv.Itoa(currentVersion), ing)
 }
 
 // 启动http服务，用于重载配置
