@@ -2,6 +2,7 @@ package tpls
 import (
 	"lain.com/mygateway/mygateway/tpls/common"
 	"lain.com/mygateway/mygateway/tpls/filters/http/ratelimit"
+	"lain.com/mygateway/mygateway/tpls/filters/http/lua"
 )
 
 input: {}
@@ -55,12 +56,21 @@ output: {
 									if comm.ratelimit.max != _|_ && comm.ratelimit.max > 0 {	// 判断rps限流
 										ratelimit.local_ratelimit
 									},
-									if comm.vars.lua_block != _|_ {
-										name: "envoy.filters.http.lua"
-										typed_config: {
-											"@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
-											inline_code: comm.vars.lua_block
+									if comm.vars.lua_block != _|_ || comm.vars.lua_request != _|_ || comm.vars.lua_response != _|_ {
+										_lua: lua & {
+											lua: {
+												if comm.vars.lua_block != _|_ {
+													block: comm.vars.lua_block
+												}
+												if comm.vars.lua_request != _|_ {
+													request: comm.vars.lua_request
+												}
+												if comm.vars.lua_response != _|_ {
+													response: comm.vars.lua_response
+												}
+											}
 										}
+										_lua.lua_filter_config
 									},
 									{
 										name: "envoy.filters.http.router"

@@ -31,6 +31,8 @@ ingress_annotations:{
 
 	// lua https://www.envoyproxy.io/docs/envoy/v1.17.4/configuration/http/http_filters/lua_filter#config-http-filters-lua
 	lua_block: ingress_prefix + "/" + "lua-block"
+	lua_request: ingress_prefix + "/" + "lua-request"
+	lua_response: ingress_prefix + "/" + "lua-response"
 }
 
 #ratelimit: {
@@ -106,5 +108,13 @@ vars: {
 
 	if annotations != _|_ && annotations[ingress_annotations.lua_block] != _|_ {
 		lua_block: annotations[ingress_annotations.lua_block]
+	}
+	if annotations != _|_ && annotations[ingress_annotations.lua_block] == _|_ {
+		if annotations[ingress_annotations.lua_request] != _|_ {
+			lua_request: annotations[ingress_annotations.lua_request]
+		}
+		if annotations[ingress_annotations.lua_response] != _|_ {
+			lua_response: annotations[ingress_annotations.lua_response]
+		}
 	}
 }
