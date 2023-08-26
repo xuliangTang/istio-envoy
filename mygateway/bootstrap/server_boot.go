@@ -96,12 +96,21 @@ func runXdsServer() error {
 	return nil
 }
 
-// OnAdd 新增envoy配置
-func OnAdd(ing *v1.Ingress) {
+// ApplyIngress 新增/更新envoy配置
+func ApplyIngress(ing *v1.Ingress) {
 	currentVersion++
-	newSnapshot := utils.AddSnapshot(strconv.Itoa(currentVersion), ing)
+	newSnapshot := utils.ApplySnapshot(strconv.Itoa(currentVersion), ing)
 	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, newSnapshot); err != nil {
-		log.Println("onAdd error:", err)
+		log.Println("apply ingress error:", err)
+	}
+}
+
+// RemoveIngress 移除该ingress的envoy配置
+func RemoveIngress(ing *v1.Ingress) {
+	currentVersion++
+	newSnapshot := utils.RemoveSnapshot(strconv.Itoa(currentVersion), ing)
+	if err := snapshotCache.SetSnapshot(context.Background(), nodeID, newSnapshot); err != nil {
+		log.Println("remove ingress error:", err)
 	}
 }
 
@@ -111,7 +120,7 @@ func runDebugHttpServer() {
 		r := gin.New()
 		r.GET("/reload", func(c *gin.Context) {
 			currentVersion++
-			ss := utils.GenerateSnapshot(strconv.Itoa(currentVersion))
+			ss := utils.GenerateTestSnapshot(strconv.Itoa(currentVersion))
 			err := snapshotCache.SetSnapshot(c, nodeID, ss)
 			if err != nil {
 				c.String(400, err.Error())

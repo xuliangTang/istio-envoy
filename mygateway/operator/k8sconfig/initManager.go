@@ -8,10 +8,12 @@ import (
 	"log"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var SchemeBuilder = &Builder{}
@@ -45,7 +47,9 @@ func InitManager() {
 	// 构建controller
 	err = builder.ControllerManagedBy(mgr).
 		For(&networkingv1.Ingress{}).
-		Complete(ingController)
+		Watches(&source.Kind{Type: &networkingv1.Ingress{}}, handler.Funcs{
+			DeleteFunc: ingController.OnDelete,
+		}).Complete(ingController)
 	if err != nil {
 		mgr.GetLogger().Error(err, "unable to create manager")
 		os.Exit(1)

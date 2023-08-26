@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -38,12 +37,14 @@ func main() {
 	}
 
 	// 获取resources节点内容
-	getResource := rsp.GetResources()[0]
-	// 反序列化为route对象
-	routeConfig := &envoy_config_route_v3.RouteConfiguration{}
-	err = getResource.UnmarshalTo(routeConfig)
-	if err != nil {
-		log.Fatalln(err)
+	log.Println("length=", len(rsp.GetResources()))
+	for _, getResource := range rsp.GetResources() {
+		// 反序列化为route对象
+		routeConfig := &envoy_config_route_v3.RouteConfiguration{}
+		err = getResource.UnmarshalTo(routeConfig)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println(routeConfig)
 	}
-	fmt.Println(routeConfig)
 }
